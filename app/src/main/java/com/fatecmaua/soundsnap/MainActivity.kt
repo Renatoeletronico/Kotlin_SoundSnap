@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.fatecmaua.soundsnap.databinding.ActivityMainBinding
 import retrofit2.Call
 import retrofit2.Callback
@@ -15,6 +16,9 @@ import com.fatecmaua.soundsnap.models.TokenResponse
 import com.fatecmaua.soundsnap.servicos.getAuthorizationHeader
 import com.fatecmaua.soundsnap.models.Usuario
 import com.fatecmaua.soundsnap.retrofit.RetrofitClient
+import com.fatecmaua.soundsnap.retrofit.RetrofitSpotifyApi
+import kotlinx.coroutines.launch
+import retrofit2.await
 import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
@@ -26,10 +30,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        lifecycleScope.launch {
+            // Aqui você aguarda o token ser obtido
+            val token = obterTokenSpotify()
+
+            if (token != null) {
+                Log.d("MainActivity", "Token obtido: $token")
+                // Agora você pode usar o token, por exemplo, chamando getUsuario(token)
+                token.also { tokenSpotify = it }
+            } else {
+                Log.e("MainActivity", "Falha ao obter o token.")
+            }
+            val result = getRand(tokenSpotify, "album")
+            result?.let {
+                Log.d("MainActivity", "Resultado do getRand: $it")
+            }
+
+        }
         // Acessando views diretamente
         binding.btntest.setOnClickListener {
             getUsuario()
-            obterTokenSpotify()
+            Log.d("MainActivity", "Token obtido: $tokenSpotify")
+
         }
     }
 
@@ -41,53 +64,60 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun get_rand(token : String, obj : String){
-
+    fun getRandomCharacter(): Char {
         val characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        val randomCharacter = characters.random()
-        var ProcuraRandomica = ""
-        var urlPesquisa = ""
-
-        when (Random.nextInt(3)) {
-            0 -> ProcuraRandomica = randomCharacter + "%25"
-            1 -> ProcuraRandomica = "%25" + randomCharacter + "%25"
-            2 -> ProcuraRandomica = "%25" + randomCharacter
-        }
-        RetrofitSpotify.servicosSpotify.get_rand(urlPesquisa).enqueue(object : Callback<String>{
-            override fun onResponse(call: Call<String>, response: Response<String>) {
-                TODO("Not yet implemented")
-            }
-
-            override fun onFailure(call: Call<String>, t: Throwable) {
-                TODO("Not yet implemented")
-            }
-
-        })
-        val getRandomOffset = Random.nextInt(999) // Gera um número aleatório entre 0 e 998
-
+        return characters[Random.nextInt(characters.length)]
     }
-    private fun obterTokenSpotify() {
+
+    fun generateRandomSearch(): String {
+        val randomCharacter = getRandomCharacter()
+        return when (Random.nextInt(3)) {
+            0 -> "$randomCharacter%25"
+            1 -> "%25$randomCharacter%25"
+            else -> "%25$randomCharacter"
+        }
+    }
+
+    suspend fun getRand(token: String, obj: String): String? {
+        val randomSearch = generateRandomSearch()
+        val getRandomOffset = Random.nextInt(1000)
+
+        return try {
+            val response = RetrofitSpotifyApi.servicosSpotifyApi.search(
+                authorization = "Bearer $token",
+                query = randomSearch,
+                offset = getRandomOffset,
+                type = obj,
+                market = "NL"
+            )
+            response.string()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Falha na requisição ${e.message}", e)
+            null
+        }
+    }
+
+    suspend fun obterTokenSpotify(): String? {
         val authorizationHeader = getAuthorizationHeader()
 
-        RetrofitSpotify.servicosSpotify.getAccessToken(authorizationHeader).enqueue(object : Callback<TokenResponse> {
-            override fun onResponse(call: Call<TokenResponse>, response: Response<TokenResponse>) {
-                if (response.isSuccessful) {
-                    val tokenResponse = response.body()
-                    tokenResponse?.let {
-                        Log.d("MainActivity", "Token de acesso: ${it.access_token}")
-                        var tokenSpotify = tokenResponse.access_token.toString()
+        return try {
+            // Fazendo a chamada suspensa para obter o token
+            val response = RetrofitSpotify.servicosSpotify.getAccessToken(authorizationHeader)
 
-                    }
-                } else {
-                    Log.e("MainActivity", "Erro ao obter token: ${response.code()} - ${response.message()}")
-                }
+            // Verificando se a resposta foi bem-sucedida
+            if (response.isSuccessful) {
+                response.body()?.accessToken  // Use 'accessToken' conforme definido na classe TokenResponse
+            } else {
+                Log.e("MainActivity", "Erro ao obter token: ${response.code()} - ${response.message()}")
+                null
             }
-
-            override fun onFailure(call: Call<TokenResponse>, t: Throwable) {
-                Log.e("MainActivity", "Falha na requisição Spotify: ", t)
-            }
-        })
+        } catch (e: Exception) {
+            // Tratando exceções em caso de falha na requisição
+            Log.e("MainActivity", "Falha na requisição Spotify: ", e)
+            null
+        }
     }
+
 
 
    private fun getUsuario (){
