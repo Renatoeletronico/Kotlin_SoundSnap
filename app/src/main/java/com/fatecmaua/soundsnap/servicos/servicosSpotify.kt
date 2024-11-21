@@ -13,6 +13,7 @@ import okhttp3.ResponseBody
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
+import com.fatecmaua.soundsnap.models.SpotifyResponse
 
 interface ServicosAPiSpotify {
     @FormUrlEncoded
@@ -30,8 +31,8 @@ interface ServicosAPiSpotify {
         @Query("limit") limit: Int = 1,
         @Query("type") type: String,
         @Query("market") market: String
-    ): ResponseBody
-    }
+    ): Response<SpotifyResponse>
+}
 
 fun getAuthorizationHeader(): String {
     val credentials = "${spotifyCredentials.CLIENT_ID}:${spotifyCredentials.CLIENT_SECRET}"
