@@ -12,18 +12,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SoundSnap"
         tools:targetApi="31">
+
+        <!-- Configuração da LoginActivity como a primeira tela -->
         <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- A MainActivity será acessada após o login -->
+        <activity android:name=".MainActivity" android:exported="true" />
     </application>
 
+    <!-- Permissões necessárias -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-
 </manifest>

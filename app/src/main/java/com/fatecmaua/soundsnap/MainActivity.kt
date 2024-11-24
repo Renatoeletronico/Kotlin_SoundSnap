@@ -1,7 +1,11 @@
 package com.fatecmaua.soundsnap
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -12,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fatecmaua.soundsnap.adapter.MyAdapter
 import com.fatecmaua.soundsnap.databinding.ActivityMainBinding
 import com.fatecmaua.soundsnap.models.AlbumItem
+import com.fatecmaua.soundsnap.models.Albuns
 
 import retrofit2.Call
 import retrofit2.Callback
@@ -30,52 +35,169 @@ import com.fatecmaua.soundsnap.models.SpotifyResponse
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var usernameText: TextView
+    private lateinit var logoutButton: Button
+
     private lateinit var binding: ActivityMainBinding
     lateinit var tokenSpotify: String
-    var artistNamesList = mutableListOf<String>()
-    lateinit var adapter: MyAdapter
+    val albumItems = mutableListOf<AlbumItem>() // Sua lista de álbuns
+    val recyclerView: RecyclerView by lazy { findViewById(R.id.recyclerView) }
+    val adapter = MyAdapter(albumItems) // Passa a lista de álbuns para o adapter
+    private var isLoading = false // Flag para evitar múltiplos carregamentos simultâneos
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-        adapter = MyAdapter(artistNamesList)
-        recyclerView.adapter = adapter
+        // Referências para os componentes
+        usernameText = findViewById(R.id.usernameText)
+        logoutButton = findViewById(R.id.logoutButton)
+
+        // Verificar se o usuário está logado
+        val sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+        val savedUsername = sharedPreferences.getString("username", null)
+        // Atualizando o TextView com o nome do usuário
+        val usernameTextView: TextView = findViewById(R.id.usernameText)
+        usernameTextView.text = savedUsername
+        if (savedUsername == null) {
+            // Se não houver nome de usuário salvo, redireciona para a LoginActivity
+            val intent = Intent(this@MainActivity, LoginActivity::class.java)
+            startActivity(intent)
+            finish()  // Fecha a MainActivity para que o usuário não possa voltar a ela
+        }
+
         recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+
+        // Adicionando o ScrollListener para detectar quando o usuário chega ao final
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val totalItemCount = layoutManager.itemCount
+                val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+
+                // Verificando se estamos perto do final da lista
+                if (!isLoading && totalItemCount <= lastVisibleItem + 10) {
+                    // Inicia uma coroutine para carregar mais dados
+                    lifecycleScope.launch {
+                        repeat(10){
+                            loadMoreData() // Carregar mais dados
+                        }
+
+                    }
+                }
+            }
+        })
 
         lifecycleScope.launch {
+            // Obtendo o token do Spotify
             val token = obterTokenSpotify()
-
             if (token != null) {
+                tokenSpotify = token
                 Log.d("MainActivity", "Token obtido: $token")
-                token.also { tokenSpotify = it }
+
+                // Carregando dados iniciais
+                loadMoreData()
             } else {
                 Log.e("MainActivity", "Falha ao obter o token.")
             }
+        }
+    }
 
-            val result = getRand(tokenSpotify, "album")
-            result?.let {
-                Log.d("MainActivity", "Resultado do getRand: $it")
-                // Atualiza a lista de artistas e notifica o RecyclerView
+    override fun onResume() {
+        super.onResume()
+        // Botão de deslogar
+        val sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+        logoutButton.setOnClickListener {
+            // Remover o nome do usuário do SharedPreferences
+            val editor = sharedPreferences.edit()
+            editor.remove("username")
+            editor.apply()
 
-                adapter.notifyDataSetChanged()
+            // Redirecionar para a LoginActivity
+            val intent = Intent(this@MainActivity, LoginActivity::class.java)
+            startActivity(intent)
+            finish() // Fecha a MainActivity
+        }
+    }
+
+    // Função para carregar mais dados
+    private suspend fun loadMoreData() {
+        if (isLoading) return // Evita múltiplos carregamentos simultâneos
+        isLoading = true // Marca como carregando
+
+        val albumData = getRand(tokenSpotify, "album")
+        albumData?.let {
+            albumItems.addAll(it) // Adiciona os álbuns obtidos à lista
+            adapter.notifyDataSetChanged() // Notifica o adapter para atualizar a visualização
+        }
+
+        isLoading = false // Desmarca como carregando
+    }
+
+    suspend fun getRand(token: String, obj: String): List<AlbumItem>? {
+        val albumDataList = mutableListOf<AlbumItem>()
+
+        repeat(2) {
+            val randomSearch = generateRandomSearch() // Gera uma busca aleatória
+            val getRandomOffset = Random.nextInt(1000) // Gera um offset aleatório
+
+            try {
+                val response = RetrofitSpotifyApi.servicosSpotifyApi.search(
+                    authorization = "Bearer $token",
+                    query = randomSearch,
+                    offset = getRandomOffset,
+                    limit = 1,
+                    type = obj,
+                    market = "NL"
+                )
+
+                if (response.isSuccessful) {
+                    val spotifyResponse = response.body()
+                    Log.d("MainActivity", "Resposta da API: $spotifyResponse")
+
+                    val albumItems = spotifyResponse?.albums?.items?.mapNotNull { albumItem ->
+                        AlbumItem(
+                            name = albumItem.name,
+                            release_date = albumItem.release_date,
+                            album_type = albumItem.album_type,
+                            total_tracks = albumItem.total_tracks,
+                            images = albumItem.images,
+                            artists = albumItem.artists
+                        )
+                    }
+
+                    albumDataList.addAll(albumItems ?: emptyList())
+                } else {
+                    Log.e("MainActivity", "Erro na resposta da API: ${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Falha na requisição: ${e.message}", e)
             }
         }
+
+        return if (albumDataList.isNotEmpty()) albumDataList else null
     }
 
-    private fun configureSystemBars() {
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+    suspend fun obterTokenSpotify(): String? {
+        val authorizationHeader = getAuthorizationHeader()
+
+        return try {
+            val response = RetrofitSpotify.servicosSpotify.getAccessToken(authorizationHeader)
+
+            if (response.isSuccessful) {
+                response.body()?.accessToken
+            } else {
+                Log.e("MainActivity", "Erro ao obter token: ${response.code()} - ${response.message()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Falha na requisição Spotify: ", e)
+            null
         }
-    }
-
-    fun getRandomCharacter(): Char {
-        val characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        return characters[Random.nextInt(characters.length)]
     }
 
     fun generateRandomSearch(): String {
@@ -87,97 +209,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    suspend fun getRand(token: String, obj: String): List<String>? {
-
-        repeat(5) {
-            val randomSearch = generateRandomSearch()
-            val getRandomOffset = Random.nextInt(1000)
-            try {
-                // Realizando a chamada para a API do Spotify
-                val response = RetrofitSpotifyApi.servicosSpotifyApi.search(
-                    authorization = "Bearer $token",
-                    query = randomSearch,
-                    offset = getRandomOffset,
-                    limit = 1, // Definindo o limite para 1 álbum
-                    type = obj,
-                    market = "NL"
-                )
-
-                // Verificando se a resposta foi bem-sucedida
-                if (response.isSuccessful) {
-                    val spotifyResponse = response.body() // Obtemos o corpo da resposta que já é do tipo SpotifyResponse
-
-                    // Extraindo os nomes dos artistas
-                    val artistNames = spotifyResponse?.albums?.items?.flatMap { albumItem: AlbumItem ->
-                        albumItem.artists.map { artist ->
-                            artist.name
-                        }
-                    }
-
-                    // Adicionando os nomes dos artistas na lista
-                    artistNames?.let {
-                        artistNamesList.addAll(it)  // Adiciona os nomes extraídos à lista
-                    }
-                } else {
-                    Log.e("MainActivity", "Erro na resposta da API: ${response.code()} - ${response.message()}")
-                }
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Falha na requisição: ${e.message}", e)
-            }
-        }
-
-        // Retorna a lista com os nomes dos artistas
-        return if (artistNamesList.isNotEmpty()) artistNamesList else null
+    fun getRandomCharacter(): Char {
+        val characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        return characters[Random.nextInt(characters.length)]
     }
-
-
-    suspend fun obterTokenSpotify(): String? {
-        val authorizationHeader = getAuthorizationHeader()
-
-        return try {
-            // Fazendo a chamada suspensa para obter o token
-            val response = RetrofitSpotify.servicosSpotify.getAccessToken(authorizationHeader)
-
-            // Verificando se a resposta foi bem-sucedida
-            if (response.isSuccessful) {
-                response.body()?.accessToken  // Use 'accessToken' conforme definido na classe TokenResponse
-            } else {
-                Log.e("MainActivity", "Erro ao obter token: ${response.code()} - ${response.message()}")
-                null
-            }
-        } catch (e: Exception) {
-            // Tratando exceções em caso de falha na requisição
-            Log.e("MainActivity", "Falha na requisição Spotify: ", e)
-            null
-        }
-    }
-
-
-
-   private fun getUsuario (){
-        RetrofitClient.servicosFastAPI.buscarUsuario("Renato").enqueue(object : Callback<Usuario> {
-            override fun onResponse(call: Call<Usuario>, response: Response<Usuario>) {
-                if (response.isSuccessful) {
-                    val usuario = response.body()
-                    if (usuario != null) {
-                        Log.d("MainActivity", "Usuário recebido: $usuario")
-
-                        println("usuario" + usuario.toString())
-                    } else {
-                        Log.w("MainActivity", "Resposta vazia do servidor spotify")
-
-                    }
-                } else {
-                    Log.e("MainActivity", "Erro na requisição spotify: ${response.code()} - ${response.message()}")
-                }
-            }
-
-            override fun onFailure(call: Call<Usuario>, t: Throwable) {
-                Log.e("MainActivity", "Falha na requisição", t)
-                println("falha na requisição")
-            }
-        })
-    }
-
-
 }
