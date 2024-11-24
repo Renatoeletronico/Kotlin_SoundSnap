@@ -12,6 +12,7 @@ data class Albums(
 
 // Modelo de um item de álbum
 data class AlbumItem(
+    val id: String, // ID único do álbum
     val name: String, // Nome do álbum
     val release_date: String, // Data de lançamento do álbum
     val album_type: String, // Tipo do álbum (ex.: "single", "album")

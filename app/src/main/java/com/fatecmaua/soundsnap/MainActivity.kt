@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
         val savedUsername = sharedPreferences.getString("username", null)
         // Atualizando o TextView com o nome do usuário
         val usernameTextView: TextView = findViewById(R.id.usernameText)
-        usernameTextView.text = savedUsername
+        usernameTextView.text = "Olá, " + savedUsername
         if (savedUsername == null) {
             // Se não houver nome de usuário salvo, redireciona para a LoginActivity
             val intent = Intent(this@MainActivity, LoginActivity::class.java)
@@ -161,6 +161,7 @@ class MainActivity : AppCompatActivity() {
 
                     val albumItems = spotifyResponse?.albums?.items?.mapNotNull { albumItem ->
                         AlbumItem(
+                            id = albumItem.id,
                             name = albumItem.name,
                             release_date = albumItem.release_date,
                             album_type = albumItem.album_type,

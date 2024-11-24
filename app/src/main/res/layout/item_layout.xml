@@ -9,7 +9,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:background="#d4cdc5">
 
         <!-- Imagem do álbum -->
         <ImageView
@@ -40,14 +41,6 @@
             android:padding="8dp" />
 
         <!-- Tipo de álbum (ex: "single", "album") -->
-        <TextView
-            android:id="@+id/AlbumTypeTxt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Album Type"
-            android:textSize="14sp"
-            android:textColor="#000000"
-            android:padding="8dp" />
 
         <!-- Total de faixas -->
         <TextView
@@ -68,6 +61,15 @@
             android:textSize="14sp"
             android:textColor="#000000"
             android:padding="8dp" />
+
+        <TextView
+            android:id="@+id/AlbumTypeTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Album Type"
+            android:textColor="#000000"
+            android:textSize="14sp" />
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>
