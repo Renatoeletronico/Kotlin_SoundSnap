@@ -3,6 +3,7 @@ package com.fatecmaua.soundsnap
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -48,7 +49,10 @@ class LoginActivity : AppCompatActivity() {
 
                 // Chamar a API para fazer login
                 RetrofitClient.servicosFastAPI.loginUser(loginRequest).enqueue(object : Callback<LoginResponse> {
-                    override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                    override fun onResponse(
+                        call: Call<LoginResponse>,
+                        response: Response<LoginResponse>
+                    ) {
                         if (response.isSuccessful && response.body() != null) {
                             val loginResponse = response.body()!!
                             if (loginResponse.success) {
@@ -65,12 +69,16 @@ class LoginActivity : AppCompatActivity() {
                             }
                         } else {
                             Toast.makeText(this@LoginActivity, "Erro na comunicação com o servidor", Toast.LENGTH_SHORT).show()
+                            Log.d("LoginActivity", "Erro na conexão com o servidor: ${response.errorBody()?.string()}")
                         }
                     }
 
                     override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
                         Toast.makeText(this@LoginActivity, "Erro na conexão com o servidor", Toast.LENGTH_SHORT).show()
+                        t.printStackTrace() // Para exibir o stack trace no log do console
+                        Log.d("LoginActivity", "Erro na conexão: ${t.message}")
                     }
+
                 })
             } else {
                 Toast.makeText(this@LoginActivity, "Por favor, insira usuário e senha", Toast.LENGTH_SHORT).show()
@@ -84,3 +92,5 @@ class LoginActivity : AppCompatActivity() {
         finish()  // Fecha a LoginActivity para que o usuário não possa voltar a ela
     }
 }
+
+

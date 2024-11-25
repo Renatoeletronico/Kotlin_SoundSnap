@@ -7,15 +7,15 @@ import retrofit2.Call
 import retrofit2.http.*
 
 data class LoginRequest(
-    val username: String,
-    val password: String
+    val usuario: String,
+    val senha: String
 )
 
 interface ServicosFastAPI {
     @GET("users/{username}")
     fun buscarUsuario(@Path("username") username: String): Call<Usuario>
 
-    @POST("login")
+    @POST("login/")
     fun loginUser(@Body loginRequest: LoginRequest): Call<LoginResponse>
 }
 

@@ -1,4 +1,5 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -13,22 +14,24 @@
         android:background="#d4cdc5">
 
         <!-- Imagem do álbum -->
+
+        <!-- Nome do artista(s) -->
+
         <ImageView
             android:id="@+id/imageView"
             android:layout_width="match_parent"
             android:layout_height="300dp"
-            android:scaleType="centerCrop"
-            android:contentDescription="@string/app_name" />
+            android:contentDescription="@string/app_name"
+            android:scaleType="centerCrop" />
 
-        <!-- Nome do artista(s) -->
         <TextView
             android:id="@+id/ArtistaTxt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Artist Name"
-            android:textSize="16sp"
+            android:textSize="24sp"
             android:textColor="#000000"
-            android:padding="8dp" />
+            android:padding="2dp" />
 
         <!-- Nome do álbum -->
         <TextView
@@ -36,40 +39,88 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Album Name"
-            android:textSize="16sp"
+            android:textSize="24sp"
             android:textColor="#000000"
-            android:padding="8dp" />
+            android:padding="2dp" />
 
-        <!-- Tipo de álbum (ex: "single", "album") -->
+        <!-- Linha com o Total de faixas e o botão Like -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="start"
+            android:padding="2dp">
 
-        <!-- Total de faixas -->
-        <TextView
-            android:id="@+id/TotalTracksTxt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Total Tracks"
-            android:textSize="14sp"
-            android:textColor="#000000"
-            android:padding="8dp" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="78dp"
+                android:gravity="start"
+                android:orientation="vertical"
+                android:padding="2dp">
+                <!-- Total de faixas -->
 
-        <!-- Data de lançamento -->
-        <TextView
-            android:id="@+id/DataLancamentoTxt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Release Date"
-            android:textSize="14sp"
-            android:textColor="#000000"
-            android:padding="8dp" />
+                <!-- Data de lançamento -->
 
-        <TextView
-            android:id="@+id/AlbumTypeTxt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:text="Album Type"
-            android:textColor="#000000"
-            android:textSize="14sp" />
+                <TextView
+                    android:id="@+id/TotalTracksTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:padding="2dp"
+                    android:text="Total Tracks"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+
+
+                <TextView
+                    android:id="@+id/DataLancamentoTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="2dp"
+                    android:text="Release Date"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toTopOf="@+id/AlbumTypeTxt"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/TotalTracksTxt" />
+
+                <TextView
+                    android:id="@+id/AlbumTypeTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="2dp"
+                    android:text="Album Type"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <ImageButton
+                    android:id="@+id/likeButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/like_claro"
+                    android:drawablePadding="4dp"
+                    android:padding="8dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:padding="2dp">
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>
