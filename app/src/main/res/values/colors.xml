@@ -2,6 +2,15 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="button_background">#d4cdc5</color> <!-- Cor de fundo -->
-    <color name="button_text_color">#191013</color> <!-- Cor da letra -->
+    <color name="button_background">#d4cdc5</color>
+    <color name="button_text_color">#191013</color>
+    <color name="colorPrimary">#d4cdc5</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#191013</color>
+
+    <!-- Cores personalizadas -->
+    <color name="colorBackground">#FFFFFF</color>
+    <color name="colorText">#191013</color>
+    <color name="colorButton">#d4cdc5</color>
+    <color name="colorError">#B00020</color>
 </resources>

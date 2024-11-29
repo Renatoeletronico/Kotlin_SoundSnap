@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import retrofit2.Call
 import retrofit2.http.*
 
+
 data class LoginRequest(
     val usuario: String,
     val senha: String
@@ -16,8 +17,8 @@ interface ServicosFastAPI {
     suspend fun buscarUsuario(@Path("username") username: String): Usuario
 
     // POST para criar um usuário
-    @POST("users")
-    fun createUser(@Body user: Usuario): Call<Usuario>
+    @POST("users/")
+    fun createUser(@Body usuario: Usuario): Call<Usuario>
 
     @POST("login/")
     fun loginUser(@Body loginRequest: LoginRequest): Call<LoginResponse>
