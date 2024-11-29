@@ -7,4 +7,5 @@ data class Albuns(
     val release_date : String,
     val album_type : String,
     val total_tracks : String,
+    var isliked : Boolean
 )

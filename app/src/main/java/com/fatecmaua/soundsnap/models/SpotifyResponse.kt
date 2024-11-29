@@ -18,7 +18,8 @@ data class AlbumItem(
     val album_type: String, // Tipo do álbum (ex.: "single", "album")
     val total_tracks: Int, // Total de faixas
     val images: List<Image>, // Lista de imagens do álbum
-    val artists: List<Artist> // Lista de artistas
+    val artists: List<Artist> ,// Lista de artistas
+    var isLiked: Boolean = false // Indica se o álbum está curtido ou não
 )
 
 // Modelo de um artista

@@ -13,10 +13,26 @@ data class LoginRequest(
 
 interface ServicosFastAPI {
     @GET("users/{username}")
-    fun buscarUsuario(@Path("username") username: String): Call<Usuario>
+    suspend fun buscarUsuario(@Path("username") username: String): Usuario
+
+    // POST para criar um usuário
+    @POST("users")
+    fun createUser(@Body user: Usuario): Call<Usuario>
 
     @POST("login/")
     fun loginUser(@Body loginRequest: LoginRequest): Call<LoginResponse>
+
+    @PUT("addlike/{user_id}/{album_id}")
+    fun addLikes(
+        @Path("user_id") userId: String,
+        @Path("album_id") albumId: String
+    ): Call<Void>
+
+    @DELETE("removelike/{user_id}/{album_id}")
+    fun removeLike(
+        @Path("user_id") userId: String,
+        @Path("album_id") albumId: String
+    ): Call<Void>
 }
 
 

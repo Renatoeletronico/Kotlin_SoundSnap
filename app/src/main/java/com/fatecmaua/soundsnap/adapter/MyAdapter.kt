@@ -1,8 +1,10 @@
 package com.fatecmaua.soundsnap.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -12,67 +14,82 @@ import com.fatecmaua.soundsnap.models.AlbumItem
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MyAdapter(private val items: MutableList<AlbumItem>) : RecyclerView.Adapter<MyAdapter.ViewHolder>() {
+class MyAdapter(
+    private val items: MutableList<AlbumItem>,
+    private var likedAlbumIds: MutableSet<String>,
+    private val onLikeClick: (String) -> Unit
+) : RecyclerView.Adapter<MyAdapter.ViewHolder>() {
 
-    // ViewHolder que contém as views do item da lista
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val albumImage: ImageView = itemView.findViewById(R.id.imageView) // Imagem do álbum
-        val artistaTxt: TextView = itemView.findViewById(R.id.ArtistaTxt) // Nome do artista(s)
-        val albumNameTxt: TextView = itemView.findViewById(R.id.AlbumTxt) // Nome do álbum
-        val albumTypeTxt: TextView = itemView.findViewById(R.id.AlbumTypeTxt) // Tipo do álbum
-        val totalTracksTxt: TextView = itemView.findViewById(R.id.TotalTracksTxt) // Total de faixas
-        val dataLancamentoTxt: TextView = itemView.findViewById(R.id.DataLancamentoTxt) // Data de lançamento
+        val albumImage: ImageView = itemView.findViewById(R.id.imageView)
+        val artistaTxt: TextView = itemView.findViewById(R.id.ArtistaTxt)
+        val albumNameTxt: TextView = itemView.findViewById(R.id.AlbumTxt)
+        val albumTypeTxt: TextView = itemView.findViewById(R.id.AlbumTypeTxt)
+        val totalTracksTxt: TextView = itemView.findViewById(R.id.TotalTracksTxt)
+        val dataLancamentoTxt: TextView = itemView.findViewById(R.id.DataLancamentoTxt)
+        val likeButton: ImageButton = itemView.findViewById(R.id.likeButton)
     }
 
-    // Infla o layout e retorna o ViewHolder
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_layout, parent, false)
         return ViewHolder(view)
     }
 
-    // Vincula os dados ao item do RecyclerView
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val albumItem = items[position]
 
-        // Configura a imagem do álbum
+        // Carregar a imagem do álbum com Glide
         if (albumItem.images.isNotEmpty()) {
             Glide.with(holder.itemView.context)
-                .load(albumItem.images[1].url) // Usando a primeira imagem
+                .load(albumItem.images[0].url)
                 .into(holder.albumImage)
         }
 
-        // Configura o nome do artista (pode ser mais de um artista, concatenados)
+        // Exibir informações do álbum
         holder.artistaTxt.text = albumItem.artists.joinToString(", ") { it.name }
-
-        // Configura o nome do álbum
         holder.albumNameTxt.text = albumItem.name
-
-        // Configura o tipo do álbum (ex: "single", "album")
         holder.albumTypeTxt.text = albumItem.album_type
-
-        // Configura o número de faixas do álbum
         holder.totalTracksTxt.text = "Total de faixas: ${albumItem.total_tracks}"
-
-        // Configura a data de lançamento
         holder.dataLancamentoTxt.text = "Lançamento: ${formatDate(albumItem.release_date)}"
+
+        // Verificar se o álbum está curtido
+        val isLiked = likedAlbumIds.contains(albumItem.id)
+        holder.likeButton.setImageResource(
+            if (isLiked) R.drawable.like_escuro else R.drawable.like_claro
+        )
+
+        // Configurar o botão de like
+        holder.likeButton.setOnClickListener {
+            val albumId = albumItem.id
+            if (likedAlbumIds.contains(albumId)) {
+                likedAlbumIds.remove(albumId) // Remove da lista de curtidos
+            } else {
+                likedAlbumIds.add(albumId) // Adiciona à lista de curtidos
+            }
+
+            onLikeClick(albumId) // Notifica a MainActivity sobre a mudança
+            notifyItemChanged(position) // Atualiza o item no RecyclerView
+        }
     }
 
-    // Retorna o tamanho da lista
     override fun getItemCount(): Int = items.size
-}
 
+    // Atualiza a lista de likes
+    fun updateLikes(updatedLikes: Set<String>) {
+        // Evita sobrescrever diretamente likedAlbumIds
+        likedAlbumIds.clear() // Limpa a lista atual
+        likedAlbumIds.addAll(updatedLikes) // Adiciona os novos likes
+        notifyDataSetChanged() // Notifica o RecyclerView para atualizar
+    }
 
-fun formatDate(dateString: String): String {
-    try {
-        // Definindo o formato da data que vem da API
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())  // Formato da data recebida (exemplo: 2024-11-23)
-        val date = inputFormat.parse(dateString)
-
-        // Definindo o formato da data que queremos exibir
-        val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) // Exemplo: 23/11/2024
-        return outputFormat.format(date ?: Date())  // Retorna a data formatada
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return dateString  // Caso haja erro, retorna o valor original
+    private fun formatDate(dateString: String): String {
+        return try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val date = inputFormat.parse(dateString)
+            outputFormat.format(date ?: Date())
+        } catch (e: Exception) {
+            dateString // Retorna a string original se houver erro
+        }
     }
 }

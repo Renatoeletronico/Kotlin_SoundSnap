@@ -20,6 +20,7 @@ class LoginActivity : AppCompatActivity() {
     private var editTextUsername: EditText? = null
     private var editTextPassword: EditText? = null
     private var buttonLogin: Button? = null
+    private var buttonRegister: Button? = null  // Botão de cadastro
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,10 +30,13 @@ class LoginActivity : AppCompatActivity() {
         editTextUsername = findViewById(R.id.editTextUsername)
         editTextPassword = findViewById(R.id.editTextPassword)
         buttonLogin = findViewById(R.id.buttonLogin)
+        buttonRegister = findViewById(R.id.buttonRegister)  // Referência ao botão de cadastro
 
         // Verificar se o usuário já está logado
         val sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
         val savedUsername = sharedPreferences.getString("username", null)
+
+        Log.d("LoginActivity", "Nome de usuário recuperado: $savedUsername")
 
         if (savedUsername != null) {
             // Usuário já está logado, redireciona diretamente para a MainActivity
@@ -41,49 +45,49 @@ class LoginActivity : AppCompatActivity() {
 
         // Lógica para fazer login
         buttonLogin?.setOnClickListener(View.OnClickListener {
-            val username = editTextUsername?.text.toString()
-            val password = editTextPassword?.text.toString()
+            val username = editTextUsername?.text.toString().trim()
+            val password = editTextPassword?.text.toString().trim()
 
             if (username.isNotEmpty() && password.isNotEmpty()) {
                 val loginRequest = LoginRequest(username, password)
 
-                // Chamar a API para fazer login
                 RetrofitClient.servicosFastAPI.loginUser(loginRequest).enqueue(object : Callback<LoginResponse> {
-                    override fun onResponse(
-                        call: Call<LoginResponse>,
-                        response: Response<LoginResponse>
-                    ) {
+                    override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                         if (response.isSuccessful && response.body() != null) {
                             val loginResponse = response.body()!!
                             if (loginResponse.success) {
-                                // Salvar o nome de usuário no SharedPreferences
                                 val editor = sharedPreferences.edit()
                                 editor.putString("username", username)
-                                editor.apply()
+                                editor.commit()
 
-                                // Redirecionar para a MainActivity
+                                Log.d("LoginActivity", "Nome de usuário salvo: $username")
+
                                 navigateToMainActivity()
                             } else {
-                                // Exibir mensagem de erro
                                 Toast.makeText(this@LoginActivity, loginResponse.message, Toast.LENGTH_SHORT).show()
                             }
                         } else {
                             Toast.makeText(this@LoginActivity, "Erro na comunicação com o servidor", Toast.LENGTH_SHORT).show()
-                            Log.d("LoginActivity", "Erro na conexão com o servidor: ${response.errorBody()?.string()}")
+                            Log.d("LoginActivity", "Erro na comunicação com o servidor: ${response.errorBody()?.string()}")
                         }
                     }
 
                     override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
                         Toast.makeText(this@LoginActivity, "Erro na conexão com o servidor", Toast.LENGTH_SHORT).show()
-                        t.printStackTrace() // Para exibir o stack trace no log do console
+                        t.printStackTrace()
                         Log.d("LoginActivity", "Erro na conexão: ${t.message}")
                     }
-
                 })
             } else {
                 Toast.makeText(this@LoginActivity, "Por favor, insira usuário e senha", Toast.LENGTH_SHORT).show()
             }
         })
+
+        // Lógica para redirecionar para a tela de cadastro
+        buttonRegister?.setOnClickListener {
+            val intent = Intent(this@LoginActivity, RegisterActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun navigateToMainActivity() {
@@ -92,5 +96,4 @@ class LoginActivity : AppCompatActivity() {
         finish()  // Fecha a LoginActivity para que o usuário não possa voltar a ela
     }
 }
-
 
